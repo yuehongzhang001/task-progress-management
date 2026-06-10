@@ -5,96 +5,62 @@ description: Use this for any multi-step coding task, refactor, migration, debug
 
 # Task Progress Management
 
-Maintain a single persistent markdown document that tracks a non-trivial task from start to finish, so that progress survives context loss, compaction, or a fresh session, and any agent (or human) can pick up exactly where work stopped.
+Maintain a single persistent markdown document that tracks a non-trivial task, so progress survives context loss, compaction, or a fresh session, and any agent (or human) can pick up exactly where work stopped.
 
 ## When to use
 
-Start or resume a task document whenever a task is likely to involve:
-- More than one file, OR
-- More than ~10 minutes of work, OR
-- A refactor, migration, multi-step debugging investigation, or feature implementation.
-
-For trivial one-line edits or single-question answers, skip this — the overhead isn't worth it.
+Start or resume a task document whenever a task is likely to involve more than one file, more than ~10 minutes of work, or is a refactor, migration, multi-step debugging investigation, or feature implementation. Skip it for trivial one-line edits or single-question answers.
 
 ## Where the document lives
 
-Store the document under the project's `.local/` folder, which must NOT be tracked by git:
+Store it under the project's `.local/` folder, which must NOT be tracked by git:
 
 ```
 .local/tasks/<short-task-slug>.md
 ```
 
-- `<short-task-slug>` is a kebab-case summary of the task, e.g. `migrate-product-images-r2`.
-- Use one file per distinct task. Don't pile unrelated tasks into one document.
+One file per distinct task. Before writing it the first time, make sure `.local/` is git-ignored: check `.gitignore`, append a `.local/` entry if missing (create the file if absent), and if anything under `.local/` is already tracked, untrack it with `git rm -r --cached .local`. Do this quietly as setup.
 
-### Ensure `.local/` is git-ignored (do this first, once)
+## What the document MUST contain
 
-Before writing the document, confirm `.local/` is ignored:
+Only three things are required. Everything else is up to you — add whatever sections best fit this particular task (decisions, changed files, tests, open questions, notes, links, etc.) and structure them however serves the work. Don't pad the document with empty headings.
 
-1. Check whether the project's `.gitignore` already ignores `.local/`.
-2. If not, append a `.local/` entry to `.gitignore` (create `.gitignore` if absent).
-3. If the repo already tracks anything under `.local/`, untrack it with `git rm -r --cached .local` (keeps the files on disk).
+1. **The task** — what we're trying to accomplish, in a sentence or few. What "done" looks like.
+2. **A checklist of steps** — the task broken into concrete steps, with completed ones clearly marked (`- [x]`) and remaining ones unchecked (`- [ ]`). Update it as the plan evolves — add, split, or drop steps as you learn.
+3. **The next step** — call out explicitly which checklist item is being worked on next, so a cold reader knows exactly where to resume without inferring it.
 
-Do this silently as setup — don't make it a big deal.
-
-## Document structure
-
-Use this template. Keep it concise and current — prune stale notes rather than letting it grow unbounded.
+A minimal valid document is just:
 
 ```markdown
-# Task: <one-line title>
+# <task title>
 
-_Last updated: <YYYY-MM-DD HH:MM> · Status: <not-started | in-progress | blocked | done>_
+<What we're accomplishing / what done looks like.>
 
-## Goal
-<What "done" looks like, in 1–3 sentences. The user-facing outcome, not the steps.>
+## Steps
+- [x] ...
+- [x] ...
+- [ ] ...  ← next
+- [ ] ...
 
-## Plan
-- [ ] Step 1 ...
-- [ ] Step 2 ...
-- [x] Step 3 ... (done)
-
-## Progress
-<Running log, newest at top. Each entry: what was done, what was learned. Brief.>
-- <YYYY-MM-DD HH:MM> — ...
-
-## Decisions
-<Choices made and WHY. Trade-offs, rejected alternatives, constraints discovered.>
-- ...
-
-## Changed files
-<Files created/modified/deleted and a one-line note on each.>
-- `path/to/file` — ...
-
-## Tests
-<How correctness is verified: commands to run, what passed/failed, what's untested.>
-- `command` — <result>
-
-## Handoff / Next steps
-<The single most important section for resuming. What to do next, open questions,
-anything a fresh agent needs to know that isn't obvious from the code.>
-- ...
+**Next:** <the item being picked up next, and anything needed to start it.>
 ```
+
+Beyond those three, use your judgment on what's worth recording — capture the non-obvious (a decision and why, a gotcha discovered, how to verify) and skip the obvious.
 
 ## Workflow
 
-1. **At task start** — Create the document (after ensuring `.local/` is ignored). Fill in Goal and an initial Plan. Set status to `in-progress`.
-2. **As you work** — Keep the document live, not as an afterthought:
-   - Check off Plan items as completed; add new ones as the plan evolves.
-   - Append to Progress when you finish a meaningful chunk or learn something.
-   - Record any non-obvious choice in Decisions with its rationale.
-   - Update Changed files and Tests as they change.
-   - Bump `Last updated`.
-3. **Before risky or long operations** (and before you expect context to compact) — Update Handoff / Next steps so resumption is clean.
-4. **At task end** — Set status to `done`, ensure Tests reflects final verification, and leave Handoff empty or noting follow-ups.
+- **At task start** — create the document (after ensuring `.local/` is ignored): write the task, an initial checklist, and the next step.
+- **As you work** — keep it live, not as an afterthought. Check off steps as they're done, revise the checklist as the plan changes, and keep the **Next** pointer current. Record anything non-obvious you'd want a fresh reader to know.
+- **Before risky or long operations, and before context is likely to compact** — make sure the checklist and Next pointer reflect reality so resumption is clean.
+- **At task end** — all steps checked; note final verification if relevant.
 
-## Resuming an existing task
+## Resuming
 
-When asked to continue work, first look for an existing document in `.local/tasks/`. If one matches, read it fully before acting — treat Handoff / Next steps and Decisions as the source of truth for where things stand. Verify any file/function it references still exists before relying on it, then continue and keep updating the same file.
+When asked to continue, first look for an existing document in `.local/tasks/`. If one matches, read it fully before acting — the checklist and **Next** pointer are the source of truth for where things stand. Verify any file or symbol it references still exists before relying on it, then continue and keep updating the same file.
 
 ## Principles
 
 - **One source of truth.** Don't scatter status across chat and code comments — the document is canonical.
 - **Write for a cold reader.** Assume whoever resumes has zero memory of this session. Include paths and rationale, not just "fixed the bug."
-- **Keep it tight.** Update in place; delete obsolete notes. A 2-page living doc beats a 20-page transcript.
-- **Never commit it.** The document is local scratch state under git-ignored `.local/`.
+- **Keep it tight.** Update in place, prune stale notes. A short living doc beats a long transcript.
+- **Never commit it.** It's local scratch state under git-ignored `.local/`.
